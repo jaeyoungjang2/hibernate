@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             targetNamespace="http://vladmihalcea.com/hpjp"
+             id="Definitions_1">
+
+    <process id="forumPostProcessAsync" name="Forum Post Process" isExecutable="true"
+             camunda:historyTimeToLive="180">
+
+        <serviceTask id="createPostTask"
+                     name="Create Post"
+                     camunda:delegateExpression="${createPostDelegate}"/>
+
+        <serviceTask id="verifyPostTask"
+                     name="Verify Post"
+                     camunda:delegateExpression="${verifyPostDelegate}"
+                     camunda:asyncBefore="true"/>
+
+        <serviceTask id="callWebServiceTask"
+                     name="Call Web Service"
+                     camunda:delegateExpression="${callWebServiceDelegate}"/>
+
+        <startEvent id="startEvent" name="Start"/>
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="createPostTask"/>
+        <sequenceFlow id="flow2" sourceRef="createPostTask" targetRef="verifyPostTask"/>
+        <sequenceFlow id="flow3" sourceRef="verifyPostTask" targetRef="callWebServiceTask"/>
+        <sequenceFlow id="flow4" sourceRef="verifyPostTask" targetRef="endEvent"/>
+        <endEvent id="endEvent" name="End"/>
+
+    </process>
+
+</definitions>
+

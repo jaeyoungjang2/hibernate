@@ -1,0 +1,39 @@
+package com.vladmihalcea.hpjp.hibernate.identifier.batch.concurrent.providers;
+
+import org.hibernate.annotations.GenericGenerator;
+
+import jakarta.persistence.*;
+import org.hibernate.id.enhanced.SequenceStyleGenerator;
+import org.hibernate.id.enhanced.TableGenerator;
+
+/**
+ * @author Vlad Mihalcea
+ */
+public class TablePostEntityProvider extends PostEntityProvider<TablePostEntityProvider.Post> {
+
+    public TablePostEntityProvider() {
+        super(Post.class);
+    }
+
+    @Override
+    public Post newPost() {
+        return new Post();
+    }
+
+    @Entity(name = "Post")
+    @Table(name = "post")
+    public static class Post {
+
+        @Id
+        @GenericGenerator(
+            name = "table",
+            type= TableGenerator.class,
+            parameters = {
+                @org.hibernate.annotations.Parameter(name = "table_name", value = "sequence_table"),
+                @org.hibernate.annotations.Parameter(name = "increment_size", value = "100"),
+                @org.hibernate.annotations.Parameter(name = "optimizer", value = "pooled"),
+        })
+        @GeneratedValue(generator = "table", strategy=GenerationType.TABLE)
+        private Long id;
+    }
+}

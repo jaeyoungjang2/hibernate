@@ -1,0 +1,136 @@
+package com.vladmihalcea.hpjp.jdbc.batch;
+
+import com.vladmihalcea.hpjp.util.AbstractOracleIntegrationTest;
+import com.vladmihalcea.hpjp.util.ReflectionUtils;
+import com.vladmihalcea.hpjp.util.providers.DataSourceProvider;
+import com.vladmihalcea.hpjp.util.providers.OracleDataSourceProvider;
+import com.vladmihalcea.hpjp.util.providers.entity.BlogEntityProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+/**
+ * BatchStatementTest - Test batching with Statements
+ *
+ * @author Vlad Mihalcea
+ */
+@ParameterizedClass
+@MethodSource("parameters")
+public class OracleDefaultExecuteBatchPreparedStatementTest extends AbstractOracleIntegrationTest {
+
+    public static final String INSERT_POST = "insert into post (title, version, id) values (?, ?, ?)";
+
+    public static final String INSERT_POST_COMMENT = "insert into post_comment (post_id, review, version, id) values (?, ?, ?, ?)";
+
+    private BlogEntityProvider entityProvider = new BlogEntityProvider();
+
+    @Parameter
+    private int defaultExecuteBatch;
+
+    public static Stream<Arguments> parameters() {
+        return Stream.of(
+            Arguments.of(1),
+            Arguments.of(50)
+        );
+    }
+
+    @Override
+    protected DataSourceProvider dataSourceProvider() {
+        return new OracleDataSourceProvider() {
+            @Override
+            public DataSource dataSource() {
+                DataSource dataSource = super.dataSource();
+                try {
+                    Properties connectionProperties = ReflectionUtils.invokeGetter(dataSource, "connectionProperties");
+                    if (connectionProperties == null) {
+                        connectionProperties = new Properties();
+                    }
+                    connectionProperties.setProperty("defaultExecuteBatch", String.valueOf(defaultExecuteBatch));
+                    ReflectionUtils.invokeSetter(dataSource, "connectionProperties", connectionProperties);
+                } catch (Exception e) {
+                    fail(e.getMessage());
+                }
+                return dataSource;
+            }
+        };
+    }
+
+    @Override
+    protected Class<?>[] entities() {
+        return entityProvider.entities();
+    }
+
+    @Test
+    public void testInsert() {
+        if (!ENABLE_LONG_RUNNING_TESTS) {
+            return;
+        }
+        LOGGER.info("Test batch insert for defaultExecuteBatch {}", defaultExecuteBatch);
+        long startNanos = System.nanoTime();
+        doInJDBC(connection -> {
+            try (
+                PreparedStatement postStatement = connection.prepareStatement(INSERT_POST);
+            ) {
+                int postCount = getPostCount();
+
+                int index;
+
+                for (int i = 0; i < postCount; i++) {
+                    index = 0;
+                    postStatement.setString(++index, String.format("Post no. %1$d", i));
+                    postStatement.setInt(++index, 0);
+                    postStatement.setLong(++index, i);
+                    postStatement.executeUpdate();
+                }
+            } catch (SQLException e) {
+                fail(e.getMessage());
+            }
+        });
+        doInJDBC(connection -> {
+            try (
+                PreparedStatement postCommentStatement = connection.prepareStatement(INSERT_POST_COMMENT);
+            ) {
+                int postCount = getPostCount();
+                int postCommentCount = getPostCommentCount();
+
+                int index;
+
+                for (int i = 0; i < postCount; i++) {
+                    for (int j = 0; j < postCommentCount; j++) {
+                        index = 0;
+                        postCommentStatement.setLong(++index, i);
+                        postCommentStatement.setString(++index, String.format("Post comment %1$d", j));
+                        postCommentStatement.setInt(++index, 0);
+                        postCommentStatement.setLong(++index, (postCommentCount * i) + j);
+                        postCommentStatement.executeUpdate();
+                    }
+                }
+            } catch (SQLException e) {
+                fail(e.getMessage());
+            }
+        });
+        LOGGER.info("{}.testInsert for defaultExecuteBatch {}, took {} millis",
+            getClass().getSimpleName(),
+            defaultExecuteBatch,
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos));
+    }
+
+    protected int getPostCount() {
+        return 1000;
+    }
+
+    protected int getPostCommentCount() {
+        return 5;
+    }
+}

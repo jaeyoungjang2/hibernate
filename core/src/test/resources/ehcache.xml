@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config
+        xmlns='http://www.ehcache.org/v3'
+        xmlns:tx='http://www.ehcache.org/v3/tx'>
+
+    <service>
+        <tx:jta-tm
+                transaction-manager-lookup-class="org.ehcache.transactions.xa.txmgr.narayana.NarayanaTransactionManagerLookup"/>
+    </service>
+
+    <persistence directory="${java.io.tmpdir}/ehcache/" />
+
+    <cache alias="com.vladmihalcea.hpjp.hibernate.cache.transactional.assigned.TransactionalEntities$Post">
+        <key-type>java.lang.Object</key-type>
+        <value-type>java.lang.Object</value-type>
+        <resources>
+            <heap unit="entries">10000</heap>
+            <offheap unit="MB">1</offheap>
+            <disk unit="MB" persistent="true">10</disk>
+        </resources>
+        <tx:xa-store unique-XAResource-id="xaCache"/>
+    </cache>
+
+</config>
