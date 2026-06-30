@@ -55,10 +55,12 @@ public class DataSourceProxyTest extends AbstractTest {
         });
     }
 
+    // datasource proxy 적용하는 메서드
     protected DataSource dataSourceProxy(DataSource dataSource) {
         String DATA_SOURCE_PROXY_NAME = DataSourceProxyType.DATA_SOURCE_PROXY.name();
 
         ChainListener listener = new ChainListener();
+        // statement logging 을 위해 slf4j를 사용하고 있음
         SLF4JQueryLoggingListener loggingListener = new SLF4JQueryLoggingListener();
         loggingListener.setQueryLogEntryCreator(new InlineQueryLogEntryCreator());
         listener.addListener(loggingListener);
