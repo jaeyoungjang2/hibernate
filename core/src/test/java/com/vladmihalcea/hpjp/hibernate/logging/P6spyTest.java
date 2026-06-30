@@ -30,6 +30,8 @@ public class P6spyTest extends AbstractTest {
 
     @Override
     protected DataSourceProxyType dataSourceProxyType() {
+        // p6spy 설정
+        // 실제 데이터 소스를 p6spy datasource 데코레이터로 감싸기만 하면 됨 (아래 코드에서 확인 가능)
         return DataSourceProxyType.P6SPY;
     }
 
@@ -46,6 +48,7 @@ public class P6spyTest extends AbstractTest {
 
     @Test
     public void testBatch() {
+        // 3개의 batch와 1개의 statement가 나가야함.
         doInJPA(entityManager -> {
             for ( long i = 0; i < 3; i++ ) {
                 Post post = new Post();
