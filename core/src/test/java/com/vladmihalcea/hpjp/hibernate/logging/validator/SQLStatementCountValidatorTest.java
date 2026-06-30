@@ -62,6 +62,7 @@ public class SQLStatementCountValidatorTest extends AbstractTest {
             LOGGER.info("Detect N+1");
             SQLStatementCountValidator.reset();
 
+            // 단일 JPQL 쿼리를 실행할 예정
             List<PostComment> comments = entityManager.createQuery("""
                 select pc
                 from PostComment pc
@@ -70,6 +71,8 @@ public class SQLStatementCountValidatorTest extends AbstractTest {
 
             assertEquals(2, comments.size());
 
+            // 한개의 sql stmt가 나갔는지 확인
+            // SQLStatementCountValidator는 가로챈 모든 statement를 집계하는 DataSourceProxy의 QueryCounterHolder에 의존한다.
             SQLStatementCountValidator.assertSelectCount(1);
         });
     }
@@ -161,6 +164,7 @@ public class SQLStatementCountValidatorTest extends AbstractTest {
         @Id
         private Long id;
 
+        // 이 부분을 EAGER로 변경하면 발생하는 쿼리수가 변경되서 테스트 코드가 오류가 발생
         @ManyToOne(fetch = FetchType.LAZY)
         private Post post;
 

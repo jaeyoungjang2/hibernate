@@ -35,6 +35,7 @@ public class SQLStatementCountValidator {
     /**
      * Reset the statement recorder
      */
+    // select, insert, update, delete count를 초기화
     public static void reset() {
         QueryCountHolder.clear();
     }
@@ -44,6 +45,7 @@ public class SQLStatementCountValidator {
      *
      * @param expectedSelectCount expected select statement count
      */
+    // 예상 쿼리수가 다르면 아래와 같이 java 예외가 발생한다.
     public static void assertSelectCount(int expectedSelectCount) {
         QueryCount queryCount = QueryCountHolder.getGrandTotal();
         long recordedSelectCount = queryCount.getSelect();
